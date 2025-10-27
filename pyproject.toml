@@ -1,0 +1,16 @@
+[pyproject.toml]
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rnn-reserving"
+version = "0.1.0"
+description = "Experimenting with neural networks in reserving"
+authors = [{ name = "Toby Cook", email = "cootob@gmail.com" }]
+license = "MIT"
+dependencies = [
+    "pandas",
+    "numpy",
+    "pytorch"
+]
