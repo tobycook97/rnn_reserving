@@ -98,19 +98,29 @@ def prepare_sequences(
     return input_seqs, target_seqs, lengths, ids
 
 def read_and_process_data(
-    feature_cols: list[str] = None,
-    split: str = 'train'
+    feature_cols: list[str] = None
 ):
     df_cas = read_local_raw_data()
     if df_cas is not None:
         df_cas = process_data(df_cas)
         df_cas = split_data(df_cas)
-        sequences = prepare_sequences(
+        train_sequences = prepare_sequences(
             df_cas,
             feature_cols=feature_cols,
-            split=split
+            split='train'
         )
-    return df_cas
+        validation_sequences = prepare_sequences(
+            df_cas,
+            feature_cols=feature_cols,
+            split='validation'
+        )
+        test_sequences = prepare_sequences(
+            df_cas,
+            feature_cols=feature_cols,
+            split='test'
+        )
+        
+    return train_sequences, validation_sequences, test_sequences
 
 
 if __name__ == "__main__":
@@ -121,12 +131,13 @@ if __name__ == "__main__":
 
     train_data = read_and_process_data(
         feature_cols=feature_cols,
-        split='train'
     )
 
     val_data = read_and_process_data(
         feature_cols=feature_cols, 
-        split='validation'
     )
+
+    if val_data is not None:
+        print(val_data[0][0]) 
 
 
