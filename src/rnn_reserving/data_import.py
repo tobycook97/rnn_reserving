@@ -12,7 +12,7 @@ def read_data(file_path):
 
 def read_local_raw_data():
     """Reads the CAS Actuarial Data from a predefined path."""
-    file_path = 'data/raw/ppauto_pos.csv'
+    file_path = '../data/raw/ppauto_pos.csv'
     return read_data(file_path)
 
 def process_data(df_cas):
@@ -101,6 +101,7 @@ def read_and_process_data(
     feature_cols: list[str] = None
 ):
     df_cas = read_local_raw_data()
+    
     if df_cas is not None:
         df_cas = process_data(df_cas)
         df_cas = split_data(df_cas)
@@ -120,8 +121,9 @@ def read_and_process_data(
             split='test'
         )
         
-    return train_sequences, validation_sequences, test_sequences
-
+        return train_sequences, validation_sequences, test_sequences
+    else:
+        ValueError("Failed to read the raw data.")
 
 if __name__ == "__main__":
 
