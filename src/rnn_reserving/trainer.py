@@ -322,3 +322,14 @@ class Trainer:
         
         self.logger.info("Training completed!")
         self.logger.info(f"Best validation loss: {self.best_val_loss:.4f}")
+
+
+
+def metrics_fn(output: torch.Tensor, target: torch.Tensor) -> Dict[str, float]:
+    """Compute metrics given model output and target."""
+    mse = nn.MSELoss()(output, target).item()
+    mae = nn.L1Loss()(output, target).item()
+    return {
+        'mse': mse,
+        'mae': mae
+    }

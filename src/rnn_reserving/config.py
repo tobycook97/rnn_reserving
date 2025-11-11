@@ -36,9 +36,9 @@ class TrainingConfig(BaseConfig):
     learning_rate: float = 0.001
     weight_decay: float = 1e-5
     shuffle_train: bool = True
-    
+
     # Optimization
-    grad_clip: float = 1.0 # not added yet
+    grad_clip: float = 1.0 # helps avoid exploding gradients
     use_mixed_precision: bool = True # not added yet
     
     # Scheduler
@@ -73,6 +73,7 @@ class ModelConfig(BaseConfig):
     hidden_size: int = 64
     num_layers: int = 2
     dropout: float = 0.2
+    output_size: int = 1
 
     def __post_init__(self):
         """Validate configuration."""

@@ -41,9 +41,6 @@ class GRUInsurance(nn.Module):
         # Output layer
         self.fc = nn.Linear(config.hidden_size, config.output_size)
         
-        # Initialize weights
-        self._initialize_weights(config.init_method)
-        
         # Log model info
         self._log_model_info()
     
@@ -56,7 +53,6 @@ class GRUInsurance(nn.Module):
         logger.info(f"  Input size: {self.config.input_size}")
         logger.info(f"  Hidden size: {self.config.hidden_size}")
         logger.info(f"  Num layers: {self.config.num_layers}")
-        logger.info(f"  Bidirectional: {self.config.bidirectional}")
         logger.info(f"  Dropout: {self.config.dropout}")
         logger.info(f"  Output size: {self.config.output_size}")
         logger.info(f"  Total parameters: {total_params:,}")
