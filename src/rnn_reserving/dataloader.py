@@ -55,15 +55,22 @@ class InsuranceForecastDataset(Dataset):
             self.ids[idx]
         )
 
-def collate_fn(batch):
-  """ Pad both inputs and outputs to max of batch length """
-  inputs, lengths, targets, _ = zip(*batch)
+def collate_fn(
+    batch
+):
+    """ Pad both inputs and outputs to max of batch length """
+    inputs, lengths, targets, _ = zip(*batch)
 
-  padded_inputs = pad_sequence(inputs, batch_first=True, padding_value=0.0)
-  padded_targets = pad_sequence(targets, batch_first=True, padding_value=0.0)
-  lengths_tensor = torch.LongTensor(lengths)
+    padded_inputs = pad_sequence(inputs, batch_first=True, padding_value=0.0)
+    padded_targets = pad_sequence(targets, batch_first=True, padding_value=0.0)
+    lengths_tensor = torch.LongTensor(lengths)
 
-  return padded_inputs, lengths_tensor, padded_targets
+    batch = {
+        'inputs': padded_inputs,
+        'lengths': lengths_tensor,
+        'targets': padded_targets
+    }
+    return batch
 
 
 def make_loaders(

@@ -131,7 +131,8 @@ class Trainer:
             wandb.init(
                 project=config.wandb_project,
                 config=asdict(config),
-                name=f"{config.model_name}_run"
+                name=f"{config.run_name}",
+                notes=config.run_notes
             )
             wandb.watch(model, log="all", log_freq=100)
     
@@ -141,6 +142,7 @@ class Trainer:
     
     def train_epoch(self, epoch: int) -> Dict[str, float]:
         """Train for one epoch."""
+        print('Training epoch starting')
         self.model.train()
         metrics_tracker = MetricsTracker()
         
@@ -148,15 +150,18 @@ class Trainer:
             self.train_loader,
             desc=f"Epoch {epoch}/{self.config.epochs} [Train]"
         )
-        
-        for batch_idx, (data, target) in enumerate(pbar):
-            data, target = data.to(self.device), target.to(self.device)
-            
+
+        for batch_idx, batch in enumerate(pbar):
+
+            data, target, lengths = (
+                batch['inputs'].to(self.device),
+                batch['targets'].to(self.device), 
+                batch['lengths']
+            )
             # Forward pass
             self.optimizer.zero_grad()
             
-           
-            output = self.model(data)
+            output = self.model(data, lengths)
             loss = self.criterion(output, target)
             loss.backward()
             
@@ -197,10 +202,14 @@ class Trainer:
             desc=f"Epoch {epoch}/{self.config.epochs} [Val]"
         )
         
-        for data, target in pbar:
-            data, target = data.to(self.device), target.to(self.device)
+        for val_batch in pbar:
+            data, target, lengths = (
+                val_batch['inputs'].to(self.device),
+                val_batch['targets'].to(self.device),
+                val_batch['lengths']
+            )
             
-            output = self.model(data)
+            output = self.model(data, lengths)
             loss = self.criterion(output, target)
             
             # Compute metrics
@@ -267,7 +276,7 @@ class Trainer:
                 
                 # Save checkpoint
                 is_best = val_metrics['loss'] < self.best_val_loss
-                
+                print('saving checkpoint, is_best=', is_best)
                 if is_best:
                     self.best_val_loss = val_metrics['loss']
                     save_checkpoint(

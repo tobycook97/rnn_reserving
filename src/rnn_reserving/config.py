@@ -25,6 +25,7 @@ class TrainingConfig(BaseConfig):
     model_name: str = "gru_model"
     experiment_name: str = "rnn_reserving_experiment"
     run_name: str = "run_1"
+    run_notes: str = ""
     
     # columns
     feature_cols: list[str] = field(default_factory=list)  # to be set externally. Not including our target which is also a feature!
@@ -63,7 +64,7 @@ class TrainingConfig(BaseConfig):
     deterministic: bool = False
     
     # Device
-    num_workers: int = 4
+    num_workers: int = 1  # can be quicker lower as we have small data
 
 
 @dataclass
