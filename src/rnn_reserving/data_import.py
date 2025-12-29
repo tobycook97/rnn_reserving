@@ -125,21 +125,3 @@ def read_and_process_data(
     else:
         ValueError("Failed to read the raw data.")
 
-if __name__ == "__main__":
-
-    feature_cols = [
-        'paid_loss_ratio', 'DevelopmentLag', 'GRCODE_mapped'
-    ]
-
-    train_data = read_and_process_data(
-        feature_cols=feature_cols,
-    )
-
-    val_data = read_and_process_data(
-        feature_cols=feature_cols, 
-    )
-
-    if val_data is not None:
-        print(val_data[0][0]) 
-
-
