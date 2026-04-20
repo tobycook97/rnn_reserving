@@ -208,7 +208,8 @@ class Trainer:
                 val_batch['targets'].to(self.device),
                 val_batch['lengths']
             )
-            
+            print(target)
+            print(data)
             output = self.model(data, lengths)
             loss = self.criterion(output, target)
             

@@ -1,19 +1,24 @@
 import pandas as pd 
 import numpy as np
+from collections import defaultdict
 
-def read_data(file_path):
+
+def read_data(file_path, data_debug=False):
     """Reads a CSV file and returns a pandas DataFrame."""
     try:
         df = pd.read_csv(file_path)
-        return df
+        if data_debug:
+            return df[df['GRCODE'] == 43].copy()
+        else:
+            return df
     except Exception as e:
         print(f"Error reading the data file: {e}")
         return None
 
-def read_local_raw_data():
+def read_local_raw_data(data_debug=False):
     """Reads the CAS Actuarial Data from a predefined path."""
     file_path = '../data/raw/ppauto_pos.csv'
-    return read_data(file_path)
+    return read_data(file_path, data_debug=data_debug)
 
 def process_data(df_cas):
     """Processes the DataFrame"""
@@ -38,7 +43,7 @@ def process_data(df_cas):
     # creates a mapping from GRCODE to integers.
     # this will allow us to embed the GRCODE as a categorical variable later on.
     df_cas['GRCODE_mapped'] = df_cas['GRCODE'].map(gr_code_mapping)
-
+    
     return df_cas
 
 def split_data(df_cas):
@@ -97,31 +102,51 @@ def prepare_sequences(
 
     return input_seqs, target_seqs, lengths, ids
 
+
+def build_sequences(df, feature_cols):
+    data = {
+        "train": defaultdict(list),
+        "validation": defaultdict(list),
+        "test": defaultdict(list),
+    }
+
+    for (ay, cc), group in df.groupby(["AccidentYear", "GRCODE_mapped"]):
+
+        group = group.sort_values("DevelopmentLag").reset_index(drop=True)
+        
+        for i in range(len(group) - 1):
+            target_split = group.loc[i+1, "bucket"]
+            
+            input_seq = group.loc[:i, feature_cols].values
+            
+            future_mask = (
+                (group.index > i) &
+                (group["bucket"] == target_split)
+            )
+            
+            target_seq = group.loc[future_mask, feature_cols[0]].values
+            
+            data[target_split]["inputs"].append(input_seq)
+            data[target_split]["targets"].append(target_seq)
+            data[target_split]["lengths"].append(i + 1)  # actual length before padding
+            data[target_split]["ids"].append(
+                (ay, cc, group.loc[i, "DevelopmentLag"], target_split)
+            )
+
+    return data
+
 def read_and_process_data(
-    feature_cols: list[str] = None
+    feature_cols: list[str] = None,
+    data_debug: bool = False,
 ):
-    df_cas = read_local_raw_data()
+    df_cas = read_local_raw_data(data_debug=data_debug)
     
     if df_cas is not None:
         df_cas = process_data(df_cas)
         df_cas = split_data(df_cas)
-        train_sequences = prepare_sequences(
-            df_cas,
-            feature_cols=feature_cols,
-            split='train'
-        )
-        validation_sequences = prepare_sequences(
-            df_cas,
-            feature_cols=feature_cols,
-            split='validation'
-        )
-        test_sequences = prepare_sequences(
-            df_cas,
-            feature_cols=feature_cols,
-            split='test'
-        )
+        sequence_data = build_sequences(df_cas, feature_cols)
         
-        return train_sequences, validation_sequences, test_sequences
+        return sequence_data['train'], sequence_data['validation'], sequence_data['test']
     else:
         ValueError("Failed to read the raw data.")
 

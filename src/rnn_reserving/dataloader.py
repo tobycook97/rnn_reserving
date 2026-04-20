@@ -31,7 +31,7 @@ class InsuranceForecastDataset(Dataset):
         lengths: List[int],
         ids: List[Any],
     ):
-        # Validation
+        
         assert len(input_seqs) == len(target_seqs) == len(lengths) == len(ids), \
             "All inputs must have the same length"
         
@@ -55,20 +55,23 @@ class InsuranceForecastDataset(Dataset):
             self.ids[idx]
         )
 
+
 def collate_fn(
-    batch
+    batch,
+    pad_value: float = 0.0,
 ):
     """ Pad both inputs and outputs to max of batch length """
-    inputs, lengths, targets, _ = zip(*batch)
+    inputs, lengths, targets, ids = zip(*batch)
 
-    padded_inputs = pad_sequence(inputs, batch_first=True, padding_value=0.0)
-    padded_targets = pad_sequence(targets, batch_first=True, padding_value=0.0)
+    padded_inputs = pad_sequence(inputs, batch_first=True, padding_value=pad_value)
+    padded_targets = pad_sequence(targets, batch_first=True, padding_value=pad_value)
     lengths_tensor = torch.LongTensor(lengths)
 
     batch = {
         'inputs': padded_inputs,
         'lengths': lengths_tensor,
-        'targets': padded_targets
+        'targets': padded_targets,
+        'ids': ids
     }
     return batch
 
@@ -78,13 +81,15 @@ def make_loaders(
 ):
     """Create DataLoaders for training and validation datasets."""
     all_cols = config.target_cols + config.feature_cols if config.feature_cols else config.target_cols
-    train_data, validation_data, _ = read_and_process_data(all_cols)
-
-    train_seqs, train_targets, train_lens, train_ids = train_data
-    val_seqs, val_targets, val_lens, val_ids = validation_data
-
-    train_data = InsuranceForecastDataset(train_seqs, train_targets, train_lens, train_ids)
-    val_data = InsuranceForecastDataset(val_seqs, val_targets, val_lens, val_ids)
+    train_data, validation_data, _ = read_and_process_data(all_cols, data_debug=config.data_debug)
+    
+    train_data = InsuranceForecastDataset(train_data['inputs'], train_data['targets'], train_data['lengths'], train_data['ids'])
+    val_data = InsuranceForecastDataset(
+        validation_data['inputs'],
+        validation_data['targets'],
+        validation_data['lengths'],
+        validation_data['ids']
+    )
 
     train_loader = DataLoader(
         train_data,

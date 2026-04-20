@@ -26,7 +26,8 @@ class TrainingConfig(BaseConfig):
     experiment_name: str = "rnn_reserving_experiment"
     run_name: str = "run_1"
     run_notes: str = ""
-    
+    data_debug: bool = False # set to true to only run data prep steps on one sample.
+
     # columns
     feature_cols: list[str] = field(default_factory=list)  # to be set externally. Not including our target which is also a feature!
     target_cols: list[str] = field(default_factory=lambda: ["paid_loss_ratio"])
@@ -60,9 +61,10 @@ class TrainingConfig(BaseConfig):
     log_interval: int = 10  # Log every N batches
     use_wandb: bool = True
     wandb_project: str = "timeseries-forecasting"
-    
+        
     deterministic: bool = False
     
+
     # Device
     num_workers: int = 1  # can be quicker lower as we have small data
 
