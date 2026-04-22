@@ -28,10 +28,11 @@ class TrainingConfig(BaseConfig):
     run_notes: str = ""
     data_debug: bool = False # set to true to only run data prep steps on one sample.
 
-    # columns
+    # data
     feature_cols: list[str] = field(default_factory=list)  # to be set externally. Not including our target which is also a feature!
     target_cols: list[str] = field(default_factory=lambda: ["paid_loss_ratio"])
-    
+    pad_value: float = -1.0  # value used for padding sequences, should be a value that doesn't appear in the data
+
     # Training
     epochs: int = 100
     batch_size: int = 32

@@ -163,6 +163,9 @@ class Trainer:
             
             output = self.model(data, lengths)
             loss = self.criterion(output, target)
+            print('Train loss:', loss.item())
+            print('Train target:', target) 
+            print('Train output:', output)
             loss.backward()
             
             if self.config.grad_clip > 0:
@@ -208,11 +211,10 @@ class Trainer:
                 val_batch['targets'].to(self.device),
                 val_batch['lengths']
             )
-            print(target)
-            print(data)
-            output = self.model(data, lengths)
-            loss = self.criterion(output, target)
             
+            output = self.model(data, lengths)
+            loss = self.criterion(output, target)            
+
             # Compute metrics
             batch_metrics = self.metrics_fn(output, target)
             batch_metrics['loss'] = loss.item()
@@ -243,7 +245,6 @@ class Trainer:
             for epoch in range(self.start_epoch + 1, self.config.epochs + 1):
                 # Train
                 train_metrics = self.train_epoch(epoch)
-                
                 # Validate
                 val_metrics = self.validate(epoch)
                 
@@ -334,12 +335,3 @@ class Trainer:
         self.logger.info(f"Best validation loss: {self.best_val_loss:.4f}")
 
 
-
-def metrics_fn(output: torch.Tensor, target: torch.Tensor) -> Dict[str, float]:
-    """Compute metrics given model output and target."""
-    mse = nn.MSELoss()(output, target).item()
-    mae = nn.L1Loss()(output, target).item()
-    return {
-        'mse': mse,
-        'mae': mae
-    }

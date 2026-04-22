@@ -2,8 +2,12 @@ import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence 
+from torch.nn import functional as F
+
 from typing import List, Any
 import logging
+
+
 
 from .data_import import read_and_process_data
 from .config import TrainingConfig
@@ -58,7 +62,7 @@ class InsuranceForecastDataset(Dataset):
 
 def collate_fn(
     batch,
-    pad_value: float = 0.0,
+    pad_value: float = -1.0,
 ):
     """ Pad both inputs and outputs to max of batch length """
     inputs, lengths, targets, ids = zip(*batch)
@@ -73,7 +77,51 @@ def collate_fn(
         'targets': padded_targets,
         'ids': ids
     }
+
     return batch
+
+
+def collate_fn(batch, pad_value: float = -1.0):
+    """Pad both inputs and outputs to max of batch length
+    
+    This function pads both the input and target sequences in the batch to the same maximum length,
+    We did have the issue where the targets and the inputs were being separately padded. This was then an issue for the val data where we aren't fillign in whole sequence
+    """
+    inputs, lengths, targets, ids = zip(*batch)
+
+    # Find the global max length across both inputs and targets
+    max_len = max(
+        max(x.shape[0] for x in inputs),
+        max(t.shape[0] for t in targets)
+    )
+
+    def pad_to_length(tensors, max_len, pad_value):
+        padded = []
+        for t in tensors:
+            pad_size = max_len - t.shape[0]
+            # Works for both 1D and 2D (seq_len, features) tensors
+            pad_dims = (0, 0) * (t.dim() - 1) + (0, pad_size) # this tells the dims e.g. (0, 1) for 1D and (0, 0, 0, 1) for 2D. 
+            padded.append(F.pad(t, pad_dims, value=pad_value))
+        return torch.stack(padded)
+
+    padded_inputs = pad_to_length(inputs, max_len, pad_value)
+    padded_targets = pad_to_length(targets, max_len, pad_value)
+    lengths_tensor = torch.LongTensor(lengths)
+    print(padded_inputs)
+    print(padded_targets)
+    return {
+        'inputs': padded_inputs,
+        'lengths': lengths_tensor,
+        'targets': padded_targets,
+        'ids': ids
+    }
+
+class CollateFn:
+    def __init__(self, pad_value: float = -1.0):
+        self.pad_value = pad_value
+    def __call__(self, batch):
+        return collate_fn(batch, pad_value=self.pad_value)
+    
 
 
 def make_loaders(
@@ -95,7 +143,7 @@ def make_loaders(
         train_data,
         batch_size=config.batch_size,
         shuffle=config.shuffle_train,
-        collate_fn=collate_fn,
+        collate_fn=CollateFn(pad_value=config.pad_value),
         num_workers=config.num_workers
     )
 
@@ -103,9 +151,8 @@ def make_loaders(
         val_data,
         batch_size=config.batch_size,
         shuffle=False,
-        collate_fn=collate_fn,
+        collate_fn=CollateFn(pad_value=config.pad_value),
         num_workers=config.num_workers
     )
-
 
     return train_loader, val_loader
